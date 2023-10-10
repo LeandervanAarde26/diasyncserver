@@ -40,9 +40,28 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'api',
+    'django_filters',
 ]
+INSTALLED_APPS += ['rest_framework.authtoken']
+
+
 
 CORS_ALLOW_ALL_ORIGINS = True
+APPEND_SLASH = False
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    # ... other backends
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

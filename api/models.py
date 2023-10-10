@@ -66,18 +66,21 @@ class Users(User):
     def getUserInformation(self):
         return f"{self.first_name} {self.last_name} {self.sex} {self.diabetes_type}"
     
+    
     def __str__(self):
         return self.getUserInformation()
     
     def generate_username(self):
         # Combine first_name and last_name, and make it lowercase
         username = f"{self.first_name.lower()}{self.last_name.lower()}"
-        return username
+        x = username.strip(' ')
+        return x
 
     def save(self, *args, **kwargs):
         if not self.username:
             # Generate the username if it's empty
             self.username = self.generate_username()
+            
         super().save(*args, **kwargs)
 
 
