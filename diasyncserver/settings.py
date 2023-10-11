@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-
+import sys
+sys.path.append('C:/Users/User/OneDrive/Desktop/DiasyncServer/api/customAuth')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,7 +48,7 @@ INSTALLED_APPS += ['rest_framework.authtoken']
 
 
 CORS_ALLOW_ALL_ORIGINS = True
-APPEND_SLASH = False
+
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'
@@ -62,6 +63,9 @@ AUTHENTICATION_BACKENDS = [
     # ... other backends
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'api.customAuth.EmailAuthBackend',
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
