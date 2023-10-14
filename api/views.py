@@ -44,20 +44,26 @@ def login_view(request):
   user = get_user(username=request.data.get('email'))
 
   if user:
-    # If authentication is successful, generate or retrieve a token
-    token, created = Token.objects.get_or_create(user=user)
-    return Response({
-      'message': 'Login successful',
-      'token': token.key,
-      'user': {
-        'id': user.id,
-        'firstname': f"{user.first_name} {user.last_name}",
-        'username': user.username,
-        'email': user.email,
-      }
-    }, status=status.HTTP_200_OK)
+    checkpass = user.check_password(request.data.get('password'))
+    if checkpass:      
+      # If authentication is successful, generate or retrieve a token
+      token, created = Token.objects.get_or_create(user=user)
+      return Response({
+        'message': 'Login successful',
+        'token': token.key,
+        'user': {
+          'id': user.id,
+          'firstname': f"{user.first_name} {user.last_name}",
+          'username': user.username,
+          'email': user.email,
+        }
+      }, status=status.HTTP_200_OK)
 
+    else:
+      # If authentication fails, provide a clear error message
+      return Response({'message': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+  
   else:
-    # If authentication fails, provide a clear error message
+      # If authentication fails, provide a clear error message
     return Response({'message': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
