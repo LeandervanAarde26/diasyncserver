@@ -3,6 +3,8 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator, MaxVa
 import datetime, ast
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password
+
 DIABETES_TYPES = [
     ("Type 1", "Type 1"),
     ("Type 2", "Type 2"),
@@ -80,7 +82,7 @@ class Users(User):
         if not self.username:
             # Generate the username if it's empty
             self.username = self.generate_username()
-            
+            self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
 

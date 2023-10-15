@@ -5,11 +5,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from django.contrib.auth import authenticate,get_user_model
-from django.contrib.auth.backends import ModelBackend, UserModel
-from django.db.models import Q
+from django.contrib.auth import get_user_model
 import csv
-from io import TextIOWrapper
+from io import StringIO, BytesIO
+import base64
+import pandas as pd
+
+
 viewset = viewsets.ModelViewSet
 
 class EmailAuthBackend(object):
@@ -37,6 +39,13 @@ class UserViewSet( viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
+
+def parse_csv(file_path):
+    with open(file_path, "r") as f:
+        reader = csv.reader(f)
+
+        for row in reader:
+            pass
 
 @api_view(['POST'])
 @permission_classes([])
@@ -71,19 +80,14 @@ def login_view(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def register_view(request):
+    print("Reach")
+    print(request.data)
     try:
         user = Users.objects.get(email=request.data.get('email'))
     except Users.DoesNotExist:
         user = None
-
+ 
     if user is None:
-        csv_file = request.FILES.get('data')
-
-        if csv_file:
-            text_data = TextIOWrapper(csv_file.file, encoding='utf-8')
-            csv_reader = csv.reader(text_data, delimiter=',')
-            next(csv_reader, None)
-
             user = Users(
                 first_name=request.data.get("first_name"),
                 last_name=request.data.get("last_name"),
@@ -94,26 +98,26 @@ def register_view(request):
                 sex=request.data.get("sex"),
                 diabetes_type=request.data.get("type"),
             )
+            user.save()  # You need to save the user object to generate an ID.
+            default_group = Group.objects.get(name='Default')  # Replace with the actual group name
+            default_group.user_set.add(user)
 
-            for row in csv_reader:
-                date_time, blood_sugar, _, _, carbs, _ = row
+            csv_file = request.data.get('data')
+            decoded_data = base64.b64decode(csv_file.split(',', 1)[1])
+            csv_stream = BytesIO(decoded_data)
+            initialData = pd.read_csv(csv_stream, dtype=str)
+
+            data = pd.DataFrame(initialData, columns=['Time', 'Blood Sugar [mmol/L]'])
+
+            for _, row in data.iterrows():
                 GlucoseReading.objects.create(
-                    user=user,
+                    user=user,  # Assign the user object, not the user.id
                     date=timezone.now(),  # Set the date as needed
-                    time=datetime.datetime.strptime(date_time, "%d/%m/%Y %H:%M").time(),
-                    blood_sugar_level=float(blood_sugar),
+                    time=datetime.datetime.strptime(row['Time'], "%d/%m/%Y %H:%M").time(),
+                    blood_sugar_level=float(row['Blood Sugar [mmol/L]']),
                 )
 
-            user.save()
-
-            return Response({
-                'message': "User Registered",
-                'name': f"{user.first_name} {user.last_name}",
-                'password': user.password,
-                'Diabetes type': user.diabetes_type
-            }, status=status.HTTP_201_CREATED)
-        else:
-            return Response({'message': 'CSV file missing, user not created.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'User Registered'}, status=status.HTTP_201_CREATED)
     else:
         return Response({'message': 'User already exists'}, status=status.HTTP_409_CONFLICT)
 
