@@ -39,6 +39,7 @@ urlpatterns = [
     path('token/verify/', TokenVerifyView.as_view(), name="token_verify"),
     path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('login/', views.login_view, name='login'),
+    path('register/', views.register_view, name='Register')
 ]
 
 #AVNS_Ejdx-dbggq3yokpHkf5
