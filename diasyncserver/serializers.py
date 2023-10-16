@@ -12,7 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ('first_name', 'last_name', 'email', 'password', 'weight', 'height', 'diabetes_type', 'sex', 'groups')
+        # fields = "__all__"
+        exclude = ['password']
 
     def create(self, validated_data):
         groups_data = validated_data.pop('groups', [])
@@ -40,5 +41,20 @@ class UserSerializer(serializers.ModelSerializer):
         data['is_superuser'] = False
         data['is_active'] = True
         return data
+    
+    
+class GlucoseSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GlucoseReading
+        fields = '__all__'
+
+    def get_user(self, obj):
+        if obj.user:
+            user_serializer = UserSerializer(obj.user)
+            return user_serializer.data
+        else:
+            return None
 
     

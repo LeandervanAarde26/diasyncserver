@@ -30,6 +30,7 @@ from rest_framework_simplejwt.views import (
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
+# router.register(r'data', views.GlucoseViewSet )
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -39,7 +40,8 @@ urlpatterns = [
     path('token/verify/', TokenVerifyView.as_view(), name="token_verify"),
     path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('login/', views.login_view, name='login'),
-    path('register/', views.register_view, name='Register')
+    path('register/', views.register_view, name='Register'),
+    path('data/', views.glucose_view),
 ]
 
 #AVNS_Ejdx-dbggq3yokpHkf5
