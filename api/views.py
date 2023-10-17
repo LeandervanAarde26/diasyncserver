@@ -10,6 +10,8 @@ import csv
 from io import StringIO, BytesIO
 import base64
 import pandas as pd
+from django.core.cache import cache
+from datetime import datetime
 
 
 viewset = viewsets.ModelViewSet
@@ -117,8 +119,8 @@ def register_view(request):
         for _, row in data.iterrows():
             GlucoseReading.objects.create(
                 user=user,
-                date=timezone.now(),
-                time=datetime.datetime.strptime(
+                date=  datetime.strptime(row['Time'], "%d/%m/%Y %H:%M").date(),
+                time= datetime.strptime(
                     row['Time'], "%d/%m/%Y %H:%M").time(),
                 blood_sugar_level=float(row['Blood Sugar [mmol/L]']),
             )
@@ -130,50 +132,25 @@ def register_view(request):
 
 @api_view(['GET'])
 def glucose_view(request):
-    user_id = request.query_params.get('userid')
-    start_date = request.query_params.get('start_date')
-    end_date = request.query_params.get('end_date')
+  user_id = request.query_params.get('userid')
+  start_date = request.query_params.get('start_date')
+  end_date = request.query_params.get('end_date')
 
-    readings = GlucoseReading.objects.all()
+  cache_key = f'glucose_readings_{user_id}_{start_date}_{end_date}'
+  readings = cache.get(cache_key)
+
+  if readings is None:
+    readings = GlucoseReading.objects.all().prefetch_related('user')
 
     if user_id is not None:
-        readings = readings.filter(user=user_id)
-    else:
-        return Response({'message': 'You can not view other blood sugars'}, status=status.HTTP_403_FORBIDDEN)
+      readings = readings.filter(user__id=user_id)
 
     if start_date is not None and end_date is not None:
-        readings = readings.filter(created_at__range=(start_date, end_date))
+      readings = readings.filter(created_at__range=(start_date, end_date))
 
-    serializer = GlucoseSerializer(readings, many=True)
+    cache.set(cache_key, readings, timeout=60)
 
-    # user_data = serializer.data[0]
-    # readings_data = []
-    # user_UID =   user_data.id
-    # first_name =  user_data.first_name
-    # last_name = user_data. last_name
-    # email =  user_data.email
-    # weight =  user_data.weight
-    # height =  user_data.height
-    # diabetes_type = user_data.diabetes_type
-    # sex = user_data.sex
+  serializer = GlucoseSerializer(readings, many=True)
 
-    # for reading in serializer.data:
-    #     readings_data.append({
-    #         "date":reading.date,
-    #         "time": reading.time,
-    #         "blood_sugar_level": reading.blood_sugar_level
-    #     })
+  return Response(serializer.data)
 
-    # response = {
-    #     'id':   user_UID,
-    #     'first_name': first_name,
-    #     'last_name': last_name,
-    #     'email': email,
-    #     'weight': weight,
-    #     'height': height,
-    #     'diabetes_type': diabetes_type,
-    #     'sex': sex,
-    #     'readings': readings_data
-    # }
-
-    return Response(serializer.data)
