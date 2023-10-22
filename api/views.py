@@ -7,11 +7,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model
 import csv
-from io import StringIO, BytesIO
+from io import BytesIO
 import base64
 import pandas as pd
 from django.core.cache import cache
 from datetime import datetime
+import openai
+from django.http import JsonResponse
+from decouple import config
 
 
 viewset = viewsets.ModelViewSet
@@ -154,3 +157,100 @@ def glucose_view(request):
 
   return Response(serializer.data)
 
+
+def format_glucose_readings_as_text(glucose_readings):
+    formatted_text = ""
+    for reading in glucose_readings:
+        formatted_text += f"Date: {reading.date} Time: {reading.time} Glucose_level: {reading.blood_sugar_level} \n" 
+
+    return formatted_text
+
+
+@api_view(['GET'])
+def get_complications(request):
+    user_id = request.query_params.get('userid')
+    cache_key = f'glucose_readings_{user_id}'
+    readings = cache.get(cache_key)
+
+    if readings is None:
+        readings = GlucoseReading.objects.all().prefetch_related('user')
+
+    if user_id is not None:
+        readings = readings.filter(user__id=user_id)
+
+    cache.set(cache_key, readings, timeout=60)
+
+    glucose_data = format_glucose_readings_as_text(readings)
+    openai.api_key = config('OPEN_AI_KEY')
+    user_message = f"""
+Please generate a JSON response in the following format:
+{{
+  "complications": [
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+  ],
+  "blood_sugar_status": "",
+  "blood_sugar_distribution": {{
+    "stable": ,
+    "low": ,
+    "high":
+  }}
+
+The response should include the following information:
+
+* Three concise long-term health complications based on my glucose readings in `blood_sugar_level` {glucose_data}. Each complication should include a heading, description, and relevant links.
+* An indicator of whether my blood sugar is high, low, or stable with a `consideration` field.
+* The percentages of stable, low, and high blood sugar in an array.
+
+Please note that the response must be in the exact JSON format specified above.
+
+Here is an example of the desired JSON response:
+
+{{
+  "complications": [
+    {{
+      "heading": "Diabetic Retinopathy",
+      "description": "Diabetic retinopathy is damage to the blood vessels in the retina, the light-sensitive tissue at the back of the eye. It is a common complication of diabetes and can lead to blindness.",
+      "link": "https://www.mayoclinic.org/diseases-conditions/diabetic-retinopathy/symptoms-causes/syc-20371626"
+    }},
+    {{
+      "heading": "Diabetic Neuropathy",
+      "description": "Diabetic neuropathy is nerve damage caused by diabetes. It can affect any nerve in the body, but most commonly affects the nerves in the feet and legs.",
+      "link": "https://www.mayoclinic.org/diseases-conditions/diabetic-neuropathy/symptoms-causes/syc-20371580"
+    }},
+    {{
+      "heading": "Diabetic Kidney Disease",
+      "description": "Diabetic kidney disease is damage to the kidneys caused by diabetes. It is a leading cause of kidney failure in the United States.",
+      "link": "https://www.mayoclinic.org/diseases-conditions/diabetic-kidney-disease/symptoms-causes/syc-20371628"
+    }}
+  ],
+  "blood_sugar_status": "High",
+  "blood_sugar_distribution": {{
+    "stable": 20,
+    "low": 15,
+    "high": 65
+  }}
+}}
+"""
+
+    chat_completion = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": user_message}]
+    )
+
+    generated_text = chat_completion.choices[0].message['content']
+
+    return JsonResponse({'Response': generated_text}, status = status.HTTP_200_OK)
