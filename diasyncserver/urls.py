@@ -42,7 +42,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='Register'),
     path('data/', views.glucose_view),
-    path('complications/' , views.get_complications)
+    path('complications/' , views.get_complications),
+    path('uploadData/', views.post_new_readings)
 ]
 
 #AVNS_Ejdx-dbggq3yokpHkf5

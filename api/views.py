@@ -254,3 +254,52 @@ Here is an example of the desired JSON response:
     generated_text = chat_completion.choices[0].message['content']
 
     return JsonResponse({'Response': generated_text}, status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def post_new_readings(request):
+    user_id = request.query_params.get('userid')
+    cache_key = f'glucose_readings_{user_id}'
+    readings = cache.get(cache_key)
+
+    if readings is None:
+        readings = GlucoseReading.objects.all().prefetch_related('user')
+
+        if user_id is not None:
+            readings = readings.filter(user__id=user_id)
+            user = Users.objects.get(id = user_id)
+            print(user)
+        cache.set(cache_key, readings, timeout=60)
+
+    serializer = GlucoseSerializer(readings, many=True)
+
+    csv_file = request.data.get('data')
+    decoded_data = base64.b64decode(csv_file.split(',', 1)[1])
+    csv_stream = BytesIO(decoded_data)
+
+    incoming_data = pd.read_csv(csv_stream, dtype=str)
+    incoming_data_df = pd.DataFrame(incoming_data, columns=['Time', 'Blood Sugar [mmol/L]'])
+    incoming_data_df = incoming_data_df.sort_values(by='Time', ascending=False)
+
+    existing_df = pd.DataFrame(serializer.data, columns=['time', 'date', 'blood_sugar_level', 'user'])
+    existing_df['Time'] = existing_df["date"]  +" "+ existing_df["time"]
+    existing_df.drop(['date', 'time'], axis=1, inplace=True)
+    existing_df['Time'] = pd.to_datetime(existing_df['Time'])
+    existing_df['Time'] = existing_df['Time'].dt.strftime('%d/%m/%Y %H:%M')
+    existing_df = existing_df.sort_values(by='Time', ascending=False)
+
+    # last_entry = existing_df.iloc[0]
+    # last_entry_index = initial_data_df[initial_data_df['Time'] == last_entry['Time']].index[0]
+    # initial_data_df = initial_data_df.iloc[:last_entry_index -2]
+    incoming_data_df.drop(incoming_data_df[incoming_data_df['Time'] < existing_df.iloc[0]['Time']].index, inplace=True)
+
+    for _, row in incoming_data_df.iterrows():
+       GlucoseReading.objects.create(
+          user=user,
+          date=  datetime.strptime(row['Time'], "%d/%m/%Y %H:%M").date(),
+          time= datetime.strptime(
+          row['Time'], "%d/%m/%Y %H:%M").time(),
+          blood_sugar_level=float(row['Blood Sugar [mmol/L]']),
+      )
+    
+    return Response({'message': incoming_data_df}, status=status.HTTP_201_CREATED)
