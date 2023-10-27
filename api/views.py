@@ -151,6 +151,7 @@ def glucose_view(request):
     if start_date is not None and end_date is not None:
       readings = readings.filter(created_at__range=(start_date, end_date))
 
+
     cache.set(cache_key, readings, timeout=60)
 
   serializer = GlucoseSerializer(readings, many=True)
@@ -262,6 +263,7 @@ def post_new_readings(request):
     cache_key = f'glucose_readings_{user_id}'
     readings = cache.get(cache_key)
 
+
     if readings is None:
         readings = GlucoseReading.objects.all().prefetch_related('user')
 
@@ -274,6 +276,8 @@ def post_new_readings(request):
     serializer = GlucoseSerializer(readings, many=True)
 
     csv_file = request.data.get('data')
+
+    print(csv_file)
     decoded_data = base64.b64decode(csv_file.split(',', 1)[1])
     csv_stream = BytesIO(decoded_data)
 
