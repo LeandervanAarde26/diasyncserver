@@ -15,7 +15,7 @@ from datetime import datetime
 import openai
 from django.http import JsonResponse
 from decouple import config
-
+import json
 
 viewset = viewsets.ModelViewSet
 
@@ -168,6 +168,188 @@ def format_glucose_readings_as_text(glucose_readings):
 
 
 @api_view(['GET'])
+def get_analysed_data(request):
+    user_id = request.query_params.get('userid')
+    cache_key = f'glucose_readings_{user_id}'
+    readings = cache.get(cache_key)
+
+    if readings is None:
+        readings = GlucoseReading.objects.all().prefetch_related('user')
+
+    if user_id is not None:
+        readings = readings.filter(user__id=user_id)
+
+    cache.set(cache_key, readings, timeout=60)
+
+    glucose_data = format_glucose_readings_as_text(readings)
+    openai.api_key = config('OPEN_AI_KEY')
+    user_message = f"""
+Please generate a JSON response in the following format:
+{{
+"analysisData" : {{
+"[LastMonthName]" : {{
+    "stable": ,
+    "low": ,
+    "high":,
+    "unstable:,
+}},
+"[CurrentMonthName]" : {{
+    "stable": ,
+    "low": ,
+    "high":,
+    "unstable:,
+}},
+}},
+
+"Observation": "",
+  "DietarySuggestions": [
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+  ],
+
+  "AnalysisSuggestions": [
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+    {{
+      "heading": "",
+      "description": ",
+      "link": ""
+    }},
+  ],
+}}
+The response should include the following information:
+
+* Two Dietary changes to consider based based on my glucose readings in `blood_sugar_level` {glucose_data}. For example, if my bloodusgar patterns show more high bloodugar, there should be a dietary change that includes less carbohydrate intake. Or if my patterns show low bloodusgar at night, there should be an adjustment that can push my glucose up slightly so that it doesn't drop at a certain time.  Each dietary recommendation should include a heading, description, and one relevant link to a recipe
+* Two concise articles on how to better manage my Diabetes based on my glucose readings in `blood_sugar_level` {glucose_data}. Each recommendation should include a heading, description, and one relevant link.
+* One Observation that you've made about my bloodsugar based on my trends that you can identify in `blood_sugar_level` {glucose_data}, this observation should be in the 'Observation' section
+* Split the data into two parts, one half should be for the previous month and the other half contains the data for this month, each months data should be analysed and have the following outCome: 
+in the `[monthName]` field, indicate:
+    "stable": using a number the % of stable bloodusgar for that month ,
+    "low": using a number the % of low bloodusgar for that month ,
+    "high":  using a number the % of high bloodusgar for that month,
+    "unstable: using a number the % of unstable bloodusgar for that month,
+
+In the case that there is no previous month data, indicate that in the [monthName] field such as 
+[monthName]: null,
+
+Please note that the response must be in the exact JSON format specified above.
+Here is an example of the desired JSON response:
+
+{{
+"analysisData": {{
+  "September": null,
+  "October":  {{
+    "stable": 20,
+    "low": 15,
+    "high": 65
+  }}
+}}
+
+  "DietarySuggestions": [
+    {{
+          "heading": "Chicken Breasts",
+      "description": "Chicken breasts are a great food to eat when you have high bloodsugar due to its lack of carbohydrates and high protein...",
+      "link": "https://WhatsforDinnerExampleLink.com"
+    }},
+    {{
+          "heading": "Eggs  ",
+      "description": "Eggs breasts are a great food to eat when you have high bloodsugar due to its lack of carbohydrates and high protein...",
+      "link": "https://WhatsforDinnerExampleLink.com"
+    }}
+  ],
+  "AnalysisSuggestions": [
+    {
+        {
+      "heading": "Understanding High bloodusgar",
+      "description": "High blood sugar (hyperglycaemia) is where the level of sugar in your blood is too high. It mainly affects people with diabetes and can be serious if not treated.",
+      "link": "https://www.nhs.uk/conditions/high-blood-sugar-hyperglycaemia/#:~:text=High%20blood%20sugar%20(hyperglycaemia)%20is,low%20blood%20sugar%20(hypoglycaemia)."
+        }
+    },
+    {
+      {
+                "heading": "8 Ways to lower bloodsugar",
+      "description": "High blood sugar, also known as hyperglycemia, is associated with diabetes, a disease that can cause heart attack, heart failure, stroke, and kidney failure. High blood sugar occurs when your body fails to produce enough insulin or use insulin efficiently. The Centers for Disease Control and Prevention estimates 13% of all Americans and 25% of those 65 or older suffer from it. ",
+      "link": "https://www.gradyhealth.org/blog/8-ways-to-lower-your-blood-sugar/"
+      }
+    }
+  ]
+}}
+}}
+"""
+
+    chat_completion = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": user_message}]
+    )
+
+    generated_text = chat_completion.choices[0].message['content']
+
+    return JsonResponse({'Response': generated_text}, status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def post_new_readings(request):
+    user_id = request.query_params.get('userid')
+    cache_key = f'glucose_readings_{user_id}'
+    readings = cache.get(cache_key)
+
+
+    if readings is None:
+        readings = GlucoseReading.objects.all().prefetch_related('user')
+
+        if user_id is not None:
+            readings = readings.filter(user__id=user_id)
+            user = Users.objects.get(id = user_id)
+            print(user)
+        cache.set(cache_key, readings, timeout=60)
+
+    serializer = GlucoseSerializer(readings, many=True)
+
+    csv_file = request.data.get('data')
+
+    print(csv_file)
+    decoded_data = base64.b64decode(csv_file.split(',', 1)[1])
+    csv_stream = BytesIO(decoded_data)
+
+    incoming_data = pd.read_csv(csv_stream, dtype=str)
+    incoming_data_df = pd.DataFrame(incoming_data, columns=['Time', 'Blood Sugar [mmol/L]'])
+    incoming_data_df = incoming_data_df.sort_values(by='Time', ascending=False)
+
+    existing_df = pd.DataFrame(serializer.data, columns=['time', 'date', 'blood_sugar_level', 'user'])
+    existing_df['Time'] = existing_df["date"]  +" "+ existing_df["time"]
+    existing_df.drop(['date', 'time'], axis=1, inplace=True)
+    existing_df['Time'] = pd.to_datetime(existing_df['Time'])
+    existing_df['Time'] = existing_df['Time'].dt.strftime('%d/%m/%Y %H:%M')
+    existing_df = existing_df.sort_values(by='Time', ascending=False)
+
+    # last_entry = existing_df.iloc[0]
+    # last_entry_index = initial_data_df[initial_data_df['Time'] == last_entry['Time']].index[0]
+    # initial_data_df = initial_data_df.iloc[:last_entry_index -2]
+    incoming_data_df.drop(incoming_data_df[incoming_data_df['Time'] < existing_df.iloc[0]['Time']].index, inplace=True)
+
+    for _, row in incoming_data_df.iterrows():
+       GlucoseReading.objects.create(
+          user=user,
+          date=  datetime.strptime(row['Time'], "%d/%m/%Y %H:%M").date(),
+          time= datetime.strptime(
+          row['Time'], "%d/%m/%Y %H:%M").time(),
+          blood_sugar_level=float(row['Blood Sugar [mmol/L]']),
+      )
+    
+    return Response({'message': incoming_data_df}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
 def get_complications(request):
     user_id = request.query_params.get('userid')
     cache_key = f'glucose_readings_{user_id}'
@@ -255,55 +437,3 @@ Here is an example of the desired JSON response:
     generated_text = chat_completion.choices[0].message['content']
 
     return JsonResponse({'Response': generated_text}, status = status.HTTP_200_OK)
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def post_new_readings(request):
-    user_id = request.query_params.get('userid')
-    cache_key = f'glucose_readings_{user_id}'
-    readings = cache.get(cache_key)
-
-
-    if readings is None:
-        readings = GlucoseReading.objects.all().prefetch_related('user')
-
-        if user_id is not None:
-            readings = readings.filter(user__id=user_id)
-            user = Users.objects.get(id = user_id)
-            print(user)
-        cache.set(cache_key, readings, timeout=60)
-
-    serializer = GlucoseSerializer(readings, many=True)
-
-    csv_file = request.data.get('data')
-
-    print(csv_file)
-    decoded_data = base64.b64decode(csv_file.split(',', 1)[1])
-    csv_stream = BytesIO(decoded_data)
-
-    incoming_data = pd.read_csv(csv_stream, dtype=str)
-    incoming_data_df = pd.DataFrame(incoming_data, columns=['Time', 'Blood Sugar [mmol/L]'])
-    incoming_data_df = incoming_data_df.sort_values(by='Time', ascending=False)
-
-    existing_df = pd.DataFrame(serializer.data, columns=['time', 'date', 'blood_sugar_level', 'user'])
-    existing_df['Time'] = existing_df["date"]  +" "+ existing_df["time"]
-    existing_df.drop(['date', 'time'], axis=1, inplace=True)
-    existing_df['Time'] = pd.to_datetime(existing_df['Time'])
-    existing_df['Time'] = existing_df['Time'].dt.strftime('%d/%m/%Y %H:%M')
-    existing_df = existing_df.sort_values(by='Time', ascending=False)
-
-    # last_entry = existing_df.iloc[0]
-    # last_entry_index = initial_data_df[initial_data_df['Time'] == last_entry['Time']].index[0]
-    # initial_data_df = initial_data_df.iloc[:last_entry_index -2]
-    incoming_data_df.drop(incoming_data_df[incoming_data_df['Time'] < existing_df.iloc[0]['Time']].index, inplace=True)
-
-    for _, row in incoming_data_df.iterrows():
-       GlucoseReading.objects.create(
-          user=user,
-          date=  datetime.strptime(row['Time'], "%d/%m/%Y %H:%M").date(),
-          time= datetime.strptime(
-          row['Time'], "%d/%m/%Y %H:%M").time(),
-          blood_sugar_level=float(row['Blood Sugar [mmol/L]']),
-      )
-    
-    return Response({'message': incoming_data_df}, status=status.HTTP_201_CREATED)

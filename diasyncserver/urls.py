@@ -43,6 +43,7 @@ urlpatterns = [
     path('register/', views.register_view, name='Register'),
     path('data/', views.glucose_view),
     path('complications/' , views.get_complications),
+    path('analyse/', views.get_analysed_data),
     path('uploadData/', views.post_new_readings)
 ]
 
