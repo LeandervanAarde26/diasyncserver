@@ -11,11 +11,13 @@ from io import BytesIO
 import base64
 import pandas as pd
 from django.core.cache import cache
-from datetime import datetime
+from datetime import datetime, date, timedelta
+import calendar
 import openai
 from django.http import JsonResponse
 from decouple import config
 import json
+
 
 viewset = viewsets.ModelViewSet
 
@@ -172,6 +174,11 @@ def get_analysed_data(request):
     user_id = request.query_params.get('userid')
     cache_key = f'glucose_readings_{user_id}'
     readings = cache.get(cache_key)
+    current_month_name = calendar.month_name[date.today().month]
+    today = date.today()
+    first_day_of_current_month = today.replace(day=1)
+    last_day_of_previous_month = first_day_of_current_month - timedelta(days=1)
+    previous_month_name = calendar.month_name[last_day_of_previous_month.month]
 
     if readings is None:
         readings = GlucoseReading.objects.all().prefetch_related('user')
@@ -187,30 +194,30 @@ def get_analysed_data(request):
 Please generate a JSON response in the following format:
 {{
 "analysisData" : {{
-"[LastMonthName]" : {{
+"{current_month_name}" : {{
     "stable": ,
     "low": ,
     "high":,
-    "unstable:,
+    "unstable:
 }},
-"[CurrentMonthName]" : {{
+"{previous_month_name}" : {{
     "stable": ,
     "low": ,
     "high":,
-    "unstable:,
-}},
+    "unstable:
+}}
 }},
 
 "Observation": "",
   "DietarySuggestions": [
     {{
       "heading": "",
-      "description": ",
+      "description": "",
       "link": ""
     }},
     {{
       "heading": "",
-      "description": ",
+      "description": "",
       "link": ""
     }},
   ],
@@ -218,15 +225,15 @@ Please generate a JSON response in the following format:
   "AnalysisSuggestions": [
     {{
       "heading": "",
-      "description": ",
+      "description":"",
       "link": ""
     }},
     {{
       "heading": "",
-      "description": ",
+      "description": "",
       "link": ""
     }},
-  ],
+  ]
 }}
 The response should include the following information:
 
@@ -248,8 +255,8 @@ Here is an example of the desired JSON response:
 
 {{
 "analysisData": {{
-  "September": null,
-  "October":  {{
+  "{previous_month_name}": null,
+  "{current_month_name}":  {{
     "stable": 20,
     "low": 15,
     "high": 65
@@ -348,6 +355,8 @@ def post_new_readings(request):
       )
     
     return Response({'message': incoming_data_df}, status=status.HTTP_201_CREATED)
+
+    
 
 @api_view(['GET'])
 def get_complications(request):
