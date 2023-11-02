@@ -44,7 +44,8 @@ urlpatterns = [
     path('data/', views.glucose_view),
     path('complications/' , views.get_complications),
     path('analyse/', views.get_analysed_data),
-    path('uploadData/', views.post_new_readings)
+    path('uploadData/', views.post_new_readings),
+    path('chat/', views.conversation)
 ]
 
 #AVNS_Ejdx-dbggq3yokpHkf5
