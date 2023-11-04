@@ -1,2 +1,5 @@
 
 .env
+api/__pycache__/views.cpython-311.pyc
+diasyncserver/__pycache__/serializers.cpython-311.pyc
+diasyncserver/__pycache__/urls.cpython-311.pyc
