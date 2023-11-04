@@ -6,7 +6,6 @@ serializer = serializers.ModelSerializer
 
 from rest_framework import serializers
 from api.models import Users, Group
-
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.PrimaryKeyRelatedField(many=True, queryset=Group.objects.all())
 
@@ -56,5 +55,6 @@ class GlucoseSerializer(serializers.ModelSerializer):
             return user_serializer.data
         else:
             return None
+        
 
     

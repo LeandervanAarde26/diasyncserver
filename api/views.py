@@ -17,7 +17,8 @@ import openai
 from django.http import JsonResponse
 from decouple import config
 import json
-
+from .Chat.main import main
+from django.core import serializers
 
 viewset = viewsets.ModelViewSet
 
@@ -219,7 +220,7 @@ Please generate a JSON response in the following format:
       "heading": "",
       "description": "",
       "link": ""
-    }},
+    }}
   ],
 
   "AnalysisSuggestions": [
@@ -232,7 +233,7 @@ Please generate a JSON response in the following format:
       "heading": "",
       "description": "",
       "link": ""
-    }},
+    }}
   ]
 }}
 The response should include the following information:
@@ -252,7 +253,7 @@ In the case that there is no previous month data, indicate that in the [monthNam
 
 Please note that the response must be in the exact JSON format specified above.
 Here is an example of the desired JSON response:
-
+NOTE: Always use double quotations, never single quotations
 {{
 "analysisData": {{
   "{previous_month_name}": null,
@@ -285,7 +286,7 @@ Here is an example of the desired JSON response:
     },
     {
       {
-                "heading": "8 Ways to lower bloodsugar",
+      "heading": "8 Ways to lower bloodsugar",
       "description": "High blood sugar, also known as hyperglycemia, is associated with diabetes, a disease that can cause heart attack, heart failure, stroke, and kidney failure. High blood sugar occurs when your body fails to produce enough insulin or use insulin efficiently. The Centers for Disease Control and Prevention estimates 13% of all Americans and 25% of those 65 or older suffer from it. ",
       "link": "https://www.gradyhealth.org/blog/8-ways-to-lower-your-blood-sugar/"
       }
@@ -446,3 +447,36 @@ Here is an example of the desired JSON response:
     generated_text = chat_completion.choices[0].message['content']
 
     return JsonResponse({'Response': generated_text}, status = status.HTTP_200_OK)
+
+
+
+@api_view(["POST"])
+@permission_classes([])
+def conversation(request):
+  user_id = request.query_params.get('userid')
+  cache_key = f'glucose_readings_{user_id}'
+  readings = cache.get(cache_key)
+  message = request.data.get("message")
+
+  if readings is None:
+    readings = GlucoseReading.objects.all().prefetch_related('user')
+
+  if user_id is not None:
+    readings = readings.filter(user__id=user_id)
+    cache.set(cache_key, readings, timeout=60)
+  
+  glucose_data = format_glucose_readings_as_text(readings)
+
+  conversation = main(message, glucose_data)
+
+  print(conversation)
+  # response = serializers.serialize("json", conversation)
+  content = conversation[-1].content
+  content = json.dumps(content)
+  print(content)
+
+  return JsonResponse(content,safe = False, status = status.HTTP_200_OK)
+
+
+  
+  
