@@ -238,7 +238,7 @@ In the backend development process:
 2. **DJANGO** Django was a new technology that I wanted to explore considering that python has had such a huge impact on the programming world, this decision was also influenced by my recent exposure to Django in industry. Although I believe
    Django is not very scalable, it was a easy and quick way to build a robust backend and REST API.
 3. **ALL ABOUT USERS** This whole project depends on two things, Users and AI. So the creation of users and their data was extremely important, the use of Data science techniques to let users upload their data was extremely useful
-4. ** Password hashing** Password hashing is extremely important to respect a users rights and data, luckily Django has built in password hashing.
+4. **Password hashing** Password hashing is extremely important to respect a users rights and data, luckily Django has built in password hashing.
 5. **JWT** To ensure user safety, JWTS were incorporated using the simple-jwt dependency for Django, an easy to use and batteries-included dependency.
 
 
