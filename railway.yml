@@ -1,4 +1,4 @@
-name: Django App
+name: diasyncserver
 
 services:
   - name: web
