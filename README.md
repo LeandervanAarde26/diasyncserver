@@ -14,8 +14,8 @@
 </br>
 <p align="center">
 
-  <a href="https://github.com/">
-    <img src="./assets/Diasync_logo.png" alt="Logo"  height="200">
+  <a href="https://github.com/LeandervanAarde/diasyncserver">
+    <img src="https://drive.google.com/uc?export=view&id=1li8QOPWr_fjSb-7JsWC3EIQ4r8Hj5AdW" alt="Logo" width="140">
   </a>
 
   <p align="center">
