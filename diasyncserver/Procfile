@@ -1,1 +1,1 @@
-web: gunicorn "diasyncserver.wsgi"
+web: gunicorn diasyncserver.wsgi --log-file -
