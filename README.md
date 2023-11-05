@@ -14,8 +14,8 @@
 </br>
 <p align="center">
 
-  <a href="https://github.com/">
-    <img src="./assets/Diasync_logo.png" alt="Logo"  height="200">
+  <a href="https://github.com/LeandervanAarde/diasyncserver">
+    <img src="https://drive.google.com/uc?export=view&id=1li8QOPWr_fjSb-7JsWC3EIQ4r8Hj5AdW" alt="Logo" width="140">
   </a>
 
   <p align="center">
@@ -56,8 +56,6 @@
 ## About the Project
 
 <!-- header image of project -->
-
-![image1](https://github.com/LeandervanAarde/UniVerse/blob/Main/)
 
 ### Project Description
 
@@ -132,7 +130,7 @@ source env/Scripts/activate
     Run the following in the command-line to install all the required dependencies:
 
     ```sh
-    pip install djangorestframework, djangorestframework-simplejwt, openai, python-dotenv faiss-cpu openai huggingface_hub psycopg_binary, pandas, labgchain,django-cors-headers
+    pip install djangorestframework, djangorestframework-simplejwt, openai, python-dotenv faiss-cpu openai huggingface_hub psycopg_binary, pandas, labgchain,django-cors-headers, InstructorEmbedding sentence_transformers, tiktoken
     ```
 
 6.  Contact the [Developer](mailto:200211@virtualwindow.co.za) for API keys that are required or create an OPENAI account for API access or if there are any issues with the dependancies.
@@ -157,9 +155,8 @@ python manage.py createsuperuser
 12. Create your super user and remember the credentials, this is how you can view the data!
 
 13.  Ensure that you have Postgres and PgAdmin installed on your machine.
+14.  NB: In the env file, make sure your variable name is set equal to OPENAI_API_KEY, otherwise the application will break
 
-    <!-- FEATURES AND FUNCTIONALITY-->
-    <!-- You can add the links to all of your imagery at the bottom of the file as references -->
 
 ## Features and Functionality
 
@@ -241,7 +238,7 @@ In the backend development process:
 2. **DJANGO** Django was a new technology that I wanted to explore considering that python has had such a huge impact on the programming world, this decision was also influenced by my recent exposure to Django in industry. Although I believe
    Django is not very scalable, it was a easy and quick way to build a robust backend and REST API.
 3. **ALL ABOUT USERS** This whole project depends on two things, Users and AI. So the creation of users and their data was extremely important, the use of Data science techniques to let users upload their data was extremely useful
-4. ** Password hashing** Password hashing is extremely important to respect a users rights and data, luckily Django has built in password hashing.
+4. **Password hashing** Password hashing is extremely important to respect a users rights and data, luckily Django has built in password hashing.
 5. **JWT** To ensure user safety, JWTS were incorporated using the simple-jwt dependency for Django, an easy to use and batteries-included dependency.
 
 
@@ -309,4 +306,4 @@ Distributed under the MIT License. See `LICENSE` for more information.\
 - [DjangoJWT](https://www.freecodecamp.org/news/how-to-use-jwt-and-django-rest-framework-to-get-tokens/)
 - [DjangoJWT](https://medium.com/@poorva59/implementing-simple-jwt-authentication-in-django-rest-framework-3e54212f14da)
 - [StackOverflow](https://stackoverflow.com/)
-- 
+- [ReinhardtDeBeer](https://github.com/EpicYellow)
