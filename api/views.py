@@ -19,9 +19,9 @@ from decouple import config
 import json
 from .Chat.main import main
 from django.core import serializers
+from dotenv import load_dotenv
 
 viewset = viewsets.ModelViewSet
-
 
 class EmailAuthBackend(object):
     def authenticate(self, request, email=None, password=None):
@@ -190,7 +190,7 @@ def get_analysed_data(request):
     cache.set(cache_key, readings, timeout=60)
 
     glucose_data = format_glucose_readings_as_text(readings)
-    openai.api_key = config('OPEN_AI_KEY')
+    openai.api_key = config('OPENAI_API_KEY')
     user_message = f"""
 Please generate a JSON response in the following format:
 {{
@@ -374,7 +374,7 @@ def get_complications(request):
     cache.set(cache_key, readings, timeout=60)
 
     glucose_data = format_glucose_readings_as_text(readings)
-    openai.api_key = config('OPEN_AI_KEY')
+    openai.api_key = config('OPENAI_API_KEY')
     user_message = f"""
 Please generate a JSON response in the following format:
 {{
@@ -473,7 +473,7 @@ def conversation(request):
   # response = serializers.serialize("json", conversation)
   content = conversation[-1].content
   content = json.dumps(content)
-  print(content)
+  print("CONTENT", content)
 
   return JsonResponse(content,safe = False, status = status.HTTP_200_OK)
 

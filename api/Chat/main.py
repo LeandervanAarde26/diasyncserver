@@ -49,6 +49,7 @@ def main(query, data):
         if(chunks is not None):
             print("handling vectorstore")
             vectorstore = vector_store(chunks)
+            print(vectorstore)
             if vectorstore:
                 print("creating chain")
                 chain = get_conversation_chain(vectorstore)
@@ -59,4 +60,3 @@ def main(query, data):
                 
     except Exception as e:
         print(str(e))
-
