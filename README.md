@@ -132,7 +132,7 @@ source env/Scripts/activate
     Run the following in the command-line to install all the required dependencies:
 
     ```sh
-    pip install djangorestframework, djangorestframework-simplejwt, openai, python-dotenv faiss-cpu openai huggingface_hub psycopg_binary, pandas, labgchain,django-cors-headers
+    pip install djangorestframework, djangorestframework-simplejwt, openai, python-dotenv faiss-cpu openai huggingface_hub psycopg_binary, pandas, labgchain,django-cors-headers, InstructorEmbedding sentence_transformers, tiktoken
     ```
 
 6.  Contact the [Developer](mailto:200211@virtualwindow.co.za) for API keys that are required or create an OPENAI account for API access or if there are any issues with the dependancies.
@@ -157,6 +157,7 @@ python manage.py createsuperuser
 12. Create your super user and remember the credentials, this is how you can view the data!
 
 13.  Ensure that you have Postgres and PgAdmin installed on your machine.
+14.  NB: In the env file, make sure your variable name is set equal to OPENAI_API_KEY, otherwise the application will break
 
     <!-- FEATURES AND FUNCTIONALITY-->
     <!-- You can add the links to all of your imagery at the bottom of the file as references -->
@@ -309,4 +310,4 @@ Distributed under the MIT License. See `LICENSE` for more information.\
 - [DjangoJWT](https://www.freecodecamp.org/news/how-to-use-jwt-and-django-rest-framework-to-get-tokens/)
 - [DjangoJWT](https://medium.com/@poorva59/implementing-simple-jwt-authentication-in-django-rest-framework-3e54212f14da)
 - [StackOverflow](https://stackoverflow.com/)
-- 
+- [ReinhardtDeBeer](https://github.com/EpicYellow)
