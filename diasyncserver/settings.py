@@ -72,7 +72,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://192.168.50.29:3000", "https://diasync.vercel.app/", "https://diasync-leandervanaarde.vercel.app/"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000","https://diasync-leandervanaarde.vercel.app","https://diasync.vercel.app",]
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 CORS_ALLOW_HEADERS = "*"
 
@@ -158,7 +158,7 @@ SIMPLE_JWT = {
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / 'my_static_files',
+    BASE_DIR / 'static',
 ]
 
 # Default primary key field type
