@@ -42,6 +42,7 @@
   - :syringe: [Ideation](#ideation)
   - :syringe: [Wireframes](#wireframes)
 - :hospital: [Development Process](#development-process)
+- :hospital: [Deployment](#deployment)
   - :syringe: [Implementation Process](#implementation-process)
     - :syringe: [Highlights](#highlights)
     - :syringe: [Challenges](#challenges)
@@ -273,6 +274,13 @@ In the backend development process:
 
 See the [open issues](https://github.com/LeandervanAarde/diasyncserver/issues) for a list of proposed features (and known issues).
 
+## Deployment 
+The deployment of this backend was done through Aiven (Database), one of the platforms that postgres recommends to use for deployment and the backend was deployed using Railway, a one-click import service for Github Repositories. 
+
+### Deployment Challenges 
+ - The configuration on the backend was not as optimised as I would have liked with some CORS errors that I had to bypass with a wildcard (*)
+ - Configuration in general was a new concept that I had run into, noticing the significant difference between a development environment and a live environment
+ - Lack of documentation for my use case. this was a challenge that I faced throughout the deployment since I couldn't really find quality documentation for hosting a Django rest framework application, rather a Django application with a front-end included. T
 <!-- AUTHORS -->
 
 ## Authors
